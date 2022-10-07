@@ -1,0 +1,159 @@
+from bs4 import BeautifulSoup
+from urllib.request import urlopen
+import datetime
+import re
+import time
+
+import pandas as pd
+
+
+def get_page_num(url):
+    html = urlopen(url)
+    bs = BeautifulSoup(html, 'html.parser')
+    try:
+        page_info = bs.find(class_="resultsShowingCount-1707762110").text
+        page_num = page_info.split()[-2].replace(',', '')
+        page_num = int(int(page_num) / 40)
+    except:
+        page_num = 1
+        pass
+
+    return page_num
+
+
+def get_item_info(url):
+    time.sleep(1.5)
+    item_info_list = []
+
+    html = urlopen(url)
+    bs_item = BeautifulSoup(html, 'html.parser')
+
+    try:
+        item_brand = bs_item.find(itemprop='brand').text
+    except:
+        item_brand = 'na'
+
+    try:
+        item_model = bs_item.find(itemprop='model').text
+    except:
+        item_model = 'na'
+
+    try:
+        item_date = bs_item.find(itemprop='vehicleModelDate').text
+    except:
+        item_date = 'na'
+
+    try:
+        item_price = bs_item.find('span', itemprop='price').text
+    except:
+        item_price = 'na'
+
+    try:
+        item_color = bs_item.find(itemprop='color').text
+    except:
+        item_color = 'na'
+
+    try:
+        item_config = bs_item.find(itemprop='vehicleConfiguration').text
+    except:
+        item_config = 'na'
+
+    try:
+        item_condition = bs_item.find(itemprop='itemCondition').text
+    except:
+        item_condition = 'na'
+
+    try:
+        item_bodytype = bs_item.find(itemprop='bodyType').text
+    except:
+        item_bodytype = 'na'
+
+    try:
+        item_wheelConfig = bs_item.find(itemprop='driveWheelConfiguration').text
+    except:
+        item_wheelConfig = 'na'
+
+    try:
+        item_transmission = bs_item.find(itemprop='vehicleTransmission').text
+    except:
+        item_transmission = 'na'
+
+    try:
+        item_fueltype = bs_item.find(itemprop='fuelType').text
+    except:
+        item_fueltype = 'na'
+
+    try:
+        item_mileage = bs_item.find(itemprop='mileageFromOdometer').text
+    except:
+        item_mileage = 'na'
+
+    item_carfax = bs_item.find('a', href=re.compile('^(https://reports.carproof.com)((?!:).)*$'))
+    try:
+        item_carfax_link = item_carfax.attrs['href']
+    except:
+        item_carfax = bs_item.find('a', href=re.compile('^(https://www.carproof.com)((?!:).)*$'))
+        try:
+            item_carfax_link = item_carfax.attrs['href']
+        except:
+            item_carfax_link = 'na'
+
+    try:
+        item_dealer_add = bs_item.find(itemprop='address').text
+    except:
+        item_dealer_add = 'na'
+
+    item_info_list.append(item_brand)
+    item_info_list.append(item_model)
+    item_info_list.append(item_date)
+    item_info_list.append(item_price)
+    item_info_list.append(item_color)
+    item_info_list.append(item_config)
+    item_info_list.append(item_condition)
+    item_info_list.append(item_bodytype)
+    item_info_list.append(item_wheelConfig)
+    item_info_list.append(item_transmission)
+    item_info_list.append(item_fueltype)
+    item_info_list.append(item_mileage)
+    item_info_list.append(item_carfax_link)
+    item_info_list.append(item_dealer_add)
+
+    return item_info_list
+
+if __name__ == '__main__':
+    title = []
+    price = []
+    itemurl = []
+
+    base_url = 'https://www.kijiji.ca'
+    init_url = 'https://www.kijiji.ca/b-autos-camions/grand-montreal/car/used/k0c174l80002a49?siteLocale=en_CA'
+
+    page_num = get_page_num(init_url)
+
+    all_info_list = []
+    itemlist = []
+    for page in range(82, 100):
+        print('page_num'+str(page))
+        page_url = 'https://www.kijiji.ca/b-autos-camions/grand-montreal/car/used/' + 'page-' + str(page) + '/k0c174l80002a49?siteLocale=en_CA'
+        html = urlopen(page_url)
+        bs = BeautifulSoup(html, 'html.parser')
+        page_count=1
+        print('page_num' + str(page)+'start check ads')
+        for link in bs.find_all('a', href=re.compile('^(/v-autos-camions/)((?!:).)*$')):
+            print('page_count:'+str(page_count))
+            if 'href' in link.attrs:
+                print('page:'+str(page)+'nums:'+str(page_count)+'has href')
+                item_url = base_url + link.attrs['href']
+                if '?' not in item_url:
+                    print('page:' + str(page) + 'nums:' + str(page_count) + 'is ready for extract')
+                    print(item_url)
+                    itemlist = get_item_info(item_url)
+                    print(itemlist)
+                    all_info_list.append(itemlist)
+                    itemlist = []
+            page_count+=1
+        df = pd.DataFrame(all_info_list)
+        df.to_csv('../Data/used_car_data_en_4.csv')
+    print(df.head(5))
+    print(df.shape)
+
