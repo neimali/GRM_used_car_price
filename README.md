@@ -66,7 +66,7 @@ Three different models:
 + **Random Forest** Again, with the sparsity associated with the data, I thought that this would be a good fit.
 
 ## Model Performance
-the Random Forest model far outperformed the other approaches on the test sets.
+the Random Forest model outperformed the other approaches on the test sets.
 + **Multiple Linear Regression** - 10423
 + **Lasso Regression** - 9115
 + **Random Forest** - 8548
